@@ -1,0 +1,189 @@
+---
+title: "MATH60633 – TP2"
+author: "William Delisle, Rémi Mailhot, Laurent Vienneau et Mathieu Verville"
+date: '2023-02-25'
+output:
+  html_document: default
+  pdf_document: default
+---
+
+## Importation des données
+
+```{r}
+
+# Import libraries & functions
+library("PerformanceAnalytics")
+library("here")
+
+source(here("function", "f_eval_portfolio.R"))
+source(here("function", "f_price_simul_univariate.R"))
+source(here("function", "f_price_simul_bivariate.R"))
+source(here("function", "f_price_simul_copula.R"))
+source(here("function", "f_volatility_surface.R"))
+source(here("function", "f_VaR_ES.R"))
+source(here("function", "f_plot_pdf.R"))
+
+
+# Load data
+load(file = here("Data", "Market.rda"))
+
+SP500_prices <- Market$sp500  
+VIX_index    <- Market$vix
+int_rate     <- Market$rf
+call_info    <- Market$calls
+put_info     <- Market$puts
+```
+
+## Fixation du prix d'un portefeuille d'options
+
+```{r}
+
+# Option portfolio description
+last_price <- as.numeric(last(SP500_prices))
+last_vol   <- as.numeric(last(VIX_index))
+last       <- c(last_price, last_vol)
+portfolio  <- list(Qty     = c(1, 1, 1, 1),
+                   Strike  = c(1600, 1650, 1750, 1800),
+                   tau     = c(20, 20, 40, 40),
+                   is_call = rep(TRUE, 4))
+
+# Evaluate portfolio value
+init_value <- f_eval_portfolio(last, portfolio, int_rate)
+cat("The initial value of the portfolio is :",sprintf("%f", init_value), "$\n")
+```
+
+## Un facteur de risque et un modèle gaussien
+
+```{r}
+
+# Calculate log returns for S&P500
+rets <- CalculateReturns(SP500_prices, method = "log")
+rets <- rets[-1,]
+
+# Inputs for simulating prices
+d_simul    <- 5
+n_simul    <- 10000
+price_init <- last_price
+
+# Price simulation in 5 days
+price_simul <- f_price_simul_univariate(rets, price_init, d_simul, n_simul)
+
+# Option prices in 5 days from simulated prices
+last <- cbind(price_simul, rep(last_vol, n_simul))
+portfolio$tau <- portfolio$tau - d_simul
+option_simul  <- apply(last, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+
+# Compute VaR95, ES95 and P&L
+level  <- 0.95
+VaR_95 <- f_VaR(init_value, option_simul, level)
+ES_95  <- f_ES(init_value, option_simul, level)
+PL     <- f_profits_and_loss(init_value, option_simul)
+
+# Result for risk mesure
+cat("With the univariate Gaussian model : \n")
+cat("VaR at 95% is",sprintf("%f", VaR_95), "$\n")
+cat("ES  at 95% is",sprintf("%f", ES_95), "$\n")
+```
+
+```{r}
+
+# P&L distribution
+title     <- "Options portfolio P&L distribution (univariate model)"
+file_name <- "univariate_distribution"
+f_plot_pdf(PL, title)
+f_png_save(PL, title, file_name)
+```
+
+## Deux facteurs de risque et modèle gaussien
+
+```{r}
+
+# Calculate log returns for S&P500 & VIX
+rets_SP500 <- rets
+rets_VIX   <- CalculateReturns(VIX_index, method = "log")
+rets_VIX   <- rets_VIX[-1,]
+rets_bi    <- data.frame(rets_SP500, rets_VIX)
+
+# Simulating prices for S&P500 and VIX
+price_init     <- c(last_price, last_vol)
+price_simul_bi <- f_price_simul_bivariate(rets_bi, price_init, d_simul, n_simul) 
+
+# Option prices in 5 days from simulated prices
+last <- price_simul_bi
+option_simul_bi <- apply(last, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+
+# Compute VaR95 et ES95
+level  <- 0.95
+VaR_95_bi <- f_VaR(init_value, option_simul_bi, level)
+ES_95_bi  <- f_ES(init_value, option_simul_bi, level)
+PL_bi     <- f_profits_and_loss(init_value, option_simul_bi)
+
+# Result for risk mesure
+cat("With the bivariate Gaussian model : \n")
+cat("VaR at 95% is",sprintf("%f", VaR_95_bi), "$\n")
+cat("ES  at 95% is",sprintf("%f", ES_95_bi), "$\n")
+```
+
+```{r}
+
+# P&L distribution
+title     <- "Options portfolio P&L distribution (bivariate model)"
+file_name <- "bivariate_distribution"
+f_plot_pdf(PL_bi, title)
+f_png_save(PL_bi, title, file_name)
+```
+
+## Deux facteurs de risque et modèle copule-marginal
+
+```{r}
+
+# Simulating prices for S&P500 and VIX
+nu              <- c(10, 5)
+rets_cop        <- rets_bi
+price_simul_cop <- f_price_simul_copula(rets_cop, nu, price_init, d_simul, n_simul)
+
+# Option prices in 5 days from simulated prices
+last <- price_simul_cop
+option_simul_cop <- apply(last, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+
+# Compute VaR95 et ES95
+level  <- 0.95
+VaR_95_cop <- f_VaR(init_value, option_simul_cop, level)
+ES_95_cop  <- f_ES(init_value, option_simul_cop, level)
+PL_cop     <- f_profits_and_loss(init_value, option_simul_cop)
+
+# Result for risk mesure
+cat("With the Gaussian copula and Student marginals : \n")
+cat("VaR at 95% is",sprintf("%f", VaR_95_cop), "$\n")
+cat("ES  at 95% is",sprintf("%f", ES_95_cop), "$\n")
+```
+
+```{r}
+
+# P&L distribution
+title     <- "Options portfolio P&L distribution (copula model)"
+file_name <- "copula"
+f_plot_pdf(PL_cop, title)
+f_png_save(PL_cop, title, file_name)
+```
+
+## Surface de volatilité
+
+```{r}
+
+# Option info + add moneyness to info
+last_price  <- as.numeric(last(SP500_prices))
+option_info <- rbind(call_info, put_info)
+m           <- option_info[,1] / last_price
+option_info <- cbind(option_info, m)
+
+# Find the paramters for the parametric form of the volatility
+alpha     <- f_opt_alpha(option_info)
+vol_param <- f_vol_param(alpha, option_info)
+```
+
+## Approche complète
+
+```{r}
+
+```
