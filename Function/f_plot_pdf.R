@@ -1,13 +1,14 @@
 # Import libraries
 library("here")
 
-f_plot_pdf <- function(x, title) {
+f_plot_pdf <- function(x, title, xlim) {
   
   ### Plots the density function of x
   
   #  INPUTS
   #   x     : [vector] (T x 1) of data to plot
   #   title : [string] of the title of the graph
+  #   xlim  : [vector] (2 x 1) Specifying the min and max bound for x-axis
   
   #  OUTPUTS
   #   NONE
@@ -19,7 +20,7 @@ f_plot_pdf <- function(x, title) {
   chart.Histogram(R = x,
                   breaks = n_breaks,
                   xlab = "Log-Returns",
-                  xlim = c(-3, 2),
+                  xlim = xlim,
                   lwd = 1.5,
                   main = title,
                   probability = TRUE,
@@ -30,20 +31,21 @@ f_plot_pdf <- function(x, title) {
 }
 
 
-f_png_save <- function(x, title, file_name) {
+f_png_save <- function(x, title, xlim, file_name) {
   
   ### Plots the density function of x and saves it in the Output folder
   
   #  INPUTS
   #   x         : [vector] (T x 1) of data to plot
   #   title     : [string] of the title of the graph
+  #   xlim  : [vector] (2 x 1) Specifying the min and max bound for x-axis
   #   file_name : [string] of the name of the .png file
   
   #  OUTPUTS
   #   NONE
   
   png(file = here("Output", paste(file_name, ".png", sep = "")))
-  f_plot_pdf(x, title)
+  f_plot_pdf(x, title, xlim)
   dev.off()
   
 }

@@ -26,9 +26,9 @@ f_eval_portfolio <- function(last, portfolio, int_rate) {
   r        <- approx(tau_rate, int_rate, xout = tau_port)$y
   
   # Option prices with Black and Scholes
-  S       <- last[1]
+  S       <- as.numeric(last[1])
   K       <- portfolio$Strike
-  IV      <- last[2]
+  IV      <- as.numeric(last[2])
   is_call <- portfolio$is_call
   tau_opt <- portfolio$tau / 250
   

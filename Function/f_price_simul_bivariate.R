@@ -35,8 +35,8 @@ f_price_simul_bivariate <- function(rets, price_init, d_simul, n_simul) {
   rets_VIX_simul   <- matrix(rets_VIX_simul, nrow = n_simul, ncol = d_simul)
   
   # Translation from returns to price in 5 days
-  SP500_simul <- price_init[1] * apply(1 + rets_SP500_simul, 1, cumprod)[d_simul,] 
-  VIX_simul   <- price_init[2] * apply(1 + rets_VIX_simul, 1, cumprod)[d_simul,] 
+  SP500_simul <- as.numeric(price_init[1]) * apply(1 + rets_SP500_simul, 1, cumprod)[d_simul,] 
+  VIX_simul   <- as.numeric(price_init[2]) * apply(1 + rets_VIX_simul, 1, cumprod)[d_simul,] 
   
   # Output
   price_simul <- cbind(SP500_simul, VIX_simul)

@@ -76,3 +76,34 @@ f_vol_param <- function(alpha, option_info) {
   vol_param
   
 }
+
+f_option_info <- function(call_info, put_info, last_price) {
+  
+  ### Function that finds the parameters in order to minimize the
+  ### objective function 
+  
+  #  INPUTS
+  #   call_info  : [matrix] (T x 3) of the information about calls. In order, 
+  #                the columns are the strike, the time to maturity in years 
+  #                and the implied volatility (IV)
+  #   put_info   : [matrix] (T x 3) of the information about calls. In order, 
+  #                the columns are the strike, the time to maturity in years 
+  #                and the implied volatility (IV)
+  #   last_price : [scalar] Price for which the information is given
+  
+  #  OUTPUTS
+  #   option_info : [matrix] (T x 4) of the information about both puts
+  #                 and calls. In order, the columns are the strike, the
+  #                 time to maturity in years, the IV and the moneyness (K/S)
+  
+  # Combine call information and put information
+  option_info <- rbind(call_info, put_info)
+  
+  # Ad the moneyness to the information
+  last_price  <- as.numeric(last_price)
+  m           <- option_info[,1] / as.numeric(last_price)
+  option_info <- cbind(option_info, m)
+  
+  option_info
+  
+}
