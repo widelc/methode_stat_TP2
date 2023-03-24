@@ -55,9 +55,7 @@ f_VaR <- function(init_price, simul_price, level) {
   abs_return <- simul_price - init_price
   
   #Compute VaR @ level
-  n_simul <- length(simul_price)
-  index   <- round((1-level) * n_simul)   
-  VaR     <- sort(abs_return)[index]
+  VaR <-as.numeric(quantile(abs_return, probs = 1-level))
   
   #Output
   VaR
@@ -80,10 +78,9 @@ f_ES <- function(init_price, simul_price, level) {
   abs_return <- simul_price - init_price
   
   #Compute ES @ level
-  n_simul <- length(simul_price)
-  index   <- round((1-level) * n_simul)   
-  ES      <- mean(sort(abs_return)[1:index])
-
+  VaR <- f_VaR(init_price, simul_price, level)
+  ES  <- mean(abs_return[abs_return <= VaR])
+  
   #Output
   ES
   

@@ -1,7 +1,7 @@
 # Import libraries
 library("here")
 
-f_plot_pdf <- function(x, title, xlim) {
+f_plot_pdf <- function(x, title, xlim, VaR) {
   
   ### Plots the density function of x
   
@@ -21,17 +21,20 @@ f_plot_pdf <- function(x, title, xlim) {
                   breaks = n_breaks,
                   xlab = "Log-Returns",
                   xlim = xlim,
-                  lwd = 1.5,
+                  lwd = 2,
                   main = title,
                   probability = TRUE,
-                  colorset = c("blue","red"),
+                  colorset = c("azure4","black"),
                   methods = c("add.density"))
-  legend(x = "topleft", legend = c("Empirical Density Curve"), fill = c("red"), cex = 0.8)
+  abline(v = VaR, col = "red", lwd = 2)
+  legend(x = "topright", legend = c("Empirical Density Curve","VaR at 95%"), 
+         fill = c("black", "red"), 
+         cex = 0.8)
   
 }
 
 
-f_png_save <- function(x, title, xlim, file_name) {
+f_png_save <- function(x, title, xlim, VaR, file_name) {
   
   ### Plots the density function of x and saves it in the Output folder
   
@@ -45,7 +48,7 @@ f_png_save <- function(x, title, xlim, file_name) {
   #   NONE
   
   png(file = here("Output", paste(file_name, ".png", sep = "")))
-  f_plot_pdf(x, title, xlim)
+  f_plot_pdf(x, title, xlim, VaR)
   dev.off()
   
 }

@@ -86,12 +86,13 @@ cat("ES  at 95% is",sprintf("%f", result_uni$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title     <- "Options portfolio P&L distribution (univariate model)"
-file_name <- "univariate_distribution"
-x_lim     <- c(-3.5,2)
+title       <- "Options portfolio P&L distribution (univariate model)"
+file_name   <- "univariate_distribution"
+x_lim       <- c(-3.5,2)
+log_VaR_uni <- as.numeric(log((result_uni$VaR + init_value)/init_value))
 
-f_plot_pdf(result_uni$PL, title, x_lim)
-f_png_save(result_uni$PL, title, x_lim, file_name)
+f_plot_pdf(result_uni$PL, title, x_lim, log_VaR_uni)
+f_png_save(result_uni$PL, title, x_lim, log_VaR_uni, file_name)
 ```
 
 ## Deux facteurs de risque et modèle gaussien
@@ -123,12 +124,13 @@ cat("ES  at 95% is",sprintf("%f", result_bi$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title     <- "Options portfolio P&L distribution (bivariate model)"
-file_name <- "bivariate_distribution"
-x_lim     <- c(-3,2)
+title      <- "Options portfolio P&L distribution (bivariate model)"
+file_name  <- "bivariate_distribution"
+x_lim      <- c(-3,2)
+log_VaR_bi <- as.numeric(log((result_bi$VaR + init_value)/init_value))
 
-f_plot_pdf(result_bi$PL, title, x_lim)
-f_png_save(result_bi$PL, title, x_lim, file_name)
+f_plot_pdf(result_bi$PL, title, x_lim, log_VaR_bi)
+f_png_save(result_bi$PL, title, x_lim, log_VaR_bi, file_name)
 ```
 
 ## Deux facteurs de risque et modèle copule-marginal
@@ -154,12 +156,13 @@ cat("ES  at 95% is",sprintf("%f", result_cop$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title     <- "Options portfolio P&L distribution (copula model)"
-file_name <- "copula"
-x_lim     <- c(-2.5,2)
+title       <- "Options portfolio P&L distribution (copula model)"
+file_name   <- "copula"
+x_lim       <- c(-2.5,2)
+log_VaR_cop <- as.numeric(log((result_cop$VaR + init_value)/init_value))
 
-f_plot_pdf(result_cop$PL, title, x_lim)
-f_png_save(result_cop$PL, title, x_lim, file_name)
+f_plot_pdf(result_cop$PL, title, x_lim, log_VaR_cop)
+f_png_save(result_cop$PL, title, x_lim, log_VaR_cop, file_name)
 ```
 
 ## Surface de volatilité
@@ -172,6 +175,8 @@ option_info <-f_option_info(call_info, put_info, last_price)
 # Paramters for the parametric from of the volatility and find the the parametric vol
 alpha     <- f_opt_alpha(option_info)
 vol_param <- f_vol_param(alpha, option_info)
+
+
 ```
 
 ## Approche complète
@@ -197,10 +202,23 @@ cat("ES  at 95% is",sprintf("%f", result_compl$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title     <- "Options portfolio P&L distribution (complete model)"
-file_name <- "complete"
-x_lim     <- c(-1.5, 1)
+title         <- "Options portfolio P&L distribution (complete model)"
+file_name     <- "complete"
+x_lim         <- c(-1.5, 1)
+log_VaR_compl <- as.numeric(log((result_compl$VaR + init_value)/init_value))
 
-f_plot_pdf(result_compl$PL, title, x_lim)
-f_png_save(result_compl$PL, title, x_lim, file_name)
+f_plot_pdf(result_compl$PL, title, x_lim, log_VaR_compl)
+f_png_save(result_compl$PL, title, x_lim, log_VaR_compl, file_name)
+```
+
+## Comparaison des approches (surface de vol à ajouté)
+
+```{r}
+
+df <- data.frame(Univariate = result_uni$PL,
+                 Bivariate  = result_bi$PL,
+                 Copula     = result_cop$PL,
+                 Complete   = result_compl$PL)
+
+chart.Boxplot(df)
 ```
