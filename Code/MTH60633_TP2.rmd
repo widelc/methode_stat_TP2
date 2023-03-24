@@ -88,11 +88,10 @@ cat("ES  at 95% is",sprintf("%f", result_uni$ES), "$\n")
 # P&L distribution
 title       <- "Options portfolio P&L distribution (univariate model)"
 file_name   <- "univariate_distribution"
-x_lim       <- c(-3.5,2)
-log_VaR_uni <- as.numeric(log((result_uni$VaR + init_value)/init_value))
 
-f_plot_pdf(result_uni$PL, title, x_lim, log_VaR_uni)
-f_png_save(result_uni$PL, title, x_lim, log_VaR_uni, file_name)
+f_plot_pdf(result_uni$PL, title, result_uni$VaR, y_max = 0.005)
+f_png_save(result_uni$PL, title, result_uni$VaR, y_max = 0.005, file_name)
+
 ```
 
 ## Deux facteurs de risque et modèle gaussien
@@ -126,11 +125,9 @@ cat("ES  at 95% is",sprintf("%f", result_bi$ES), "$\n")
 # P&L distribution
 title      <- "Options portfolio P&L distribution (bivariate model)"
 file_name  <- "bivariate_distribution"
-x_lim      <- c(-3,2)
-log_VaR_bi <- as.numeric(log((result_bi$VaR + init_value)/init_value))
 
-f_plot_pdf(result_bi$PL, title, x_lim, log_VaR_bi)
-f_png_save(result_bi$PL, title, x_lim, log_VaR_bi, file_name)
+f_plot_pdf(result_bi$PL, title, result_bi$VaR, y_max = 0.005)
+f_png_save(result_bi$PL, title, result_bi$VaR, y_max = 0.005, file_name)
 ```
 
 ## Deux facteurs de risque et modèle copule-marginal
@@ -158,11 +155,9 @@ cat("ES  at 95% is",sprintf("%f", result_cop$ES), "$\n")
 # P&L distribution
 title       <- "Options portfolio P&L distribution (copula model)"
 file_name   <- "copula"
-x_lim       <- c(-2.5,2)
-log_VaR_cop <- as.numeric(log((result_cop$VaR + init_value)/init_value))
 
-f_plot_pdf(result_cop$PL, title, x_lim, log_VaR_cop)
-f_png_save(result_cop$PL, title, x_lim, log_VaR_cop, file_name)
+f_plot_pdf(result_cop$PL, title, result_cop$VaR, y_max = 0.006)
+f_png_save(result_cop$PL, title, result_cop$VaR, y_max = 0.006, file_name)
 ```
 
 ## Surface de volatilité
@@ -204,11 +199,9 @@ cat("ES  at 95% is",sprintf("%f", result_compl$ES), "$\n")
 # P&L distribution
 title         <- "Options portfolio P&L distribution (complete model)"
 file_name     <- "complete"
-x_lim         <- c(-1.5, 1)
-log_VaR_compl <- as.numeric(log((result_compl$VaR + init_value)/init_value))
 
-f_plot_pdf(result_compl$PL, title, x_lim, log_VaR_compl)
-f_png_save(result_compl$PL, title, x_lim, log_VaR_compl, file_name)
+f_plot_pdf(result_compl$PL, title, result_compl$VaR, y_max = 0.01)
+f_png_save(result_compl$PL, title, result_compl$VaR, y_max = 0.01, file_name)
 ```
 
 ## Comparaison des approches (surface de vol à ajouté)

@@ -34,7 +34,7 @@ f_profits_and_loss <- function(init_price, simul_price) {
   #  OUTPUTS
   #   PL : [vector] (n_simul x 1) of profits ans loss
   
-  PL <- log(simul_price / init_price)
+  PL <- simul_price - init_price
   PL
   
 }
