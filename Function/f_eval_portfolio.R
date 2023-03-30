@@ -1,5 +1,5 @@
 
-f_eval_portfolio <- function(last, portfolio, int_rate) {
+f_eval_portfolio <- function(last, portfolio, int_rate, d_simul = 0) {
   
   ### Computes the value of an option portfolio
   
@@ -7,6 +7,7 @@ f_eval_portfolio <- function(last, portfolio, int_rate) {
   #   last      : [vector] (2 x 1) of the last price of the index and the last known volatility
   #   portfolio : [list] of information about the option portfolio (see NOTE)
   #   int_rate  : [vector] of the term structure of interest rates (from Market database)
+  #   d_simul   : [scalar] Number of days ahead we want to simulate prices
   
   #  OUTPUTS
   #   port_value : [scalar] Value of the option portfolio
@@ -30,7 +31,7 @@ f_eval_portfolio <- function(last, portfolio, int_rate) {
   K       <- portfolio$Strike
   IV      <- as.numeric(last[2])
   is_call <- portfolio$is_call
-  tau_opt <- portfolio$tau / 250
+  tau_opt <- (portfolio$tau - d_simul) / 250
   
   option_prices <- f_BlackScholes(S, K, r, IV, tau_opt, is_call)
   

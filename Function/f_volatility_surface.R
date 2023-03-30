@@ -1,8 +1,13 @@
+source(here("function", "f_eval_portfolio.R"))
+
+
+###############################################################################
 
 f_opt_alpha <- function(option_info) {
   
-  ### Function that finds the parameters in order to minimize the
-  ### objective function 
+  ### Function that finds the parameters (alpha) in order to minimize the
+  ### objective function. Only OTM puts and calls are used for the 
+  ### optimization.
   
   #  INPUTS
   #   option_info : [matrix] (T x 4) of the information about both puts
@@ -10,9 +15,10 @@ f_opt_alpha <- function(option_info) {
   #                 time to maturity in years, the IV and the moneyness (K/S)
   
   #  OUTPUTS
-  #   alpha : [vector] (5 x 1) of the values of the parameters
+  #   alpha : [vector] (4 x 1) of the values of the parameters
   
-  alpha0 <- rep(1, 5)
+  # Optimize
+  alpha0 <- rep(0.1, 4)
   alpha  <- optim(par = alpha0,
                   fn  = f_objective,
                   option_info = option_info)$par
@@ -25,7 +31,7 @@ f_objective <- function(alpha, option_info) {
   ### Function that defines the objective function to minimize
   
   #  INPUTS
-  #   alpha       : [vector] (5 x 1) of the values of the parameters
+  #   alpha       : [vector] (4 x 1) of the values of the parameters
   #   option_info : [matrix] (T x 4) of the information about both puts
   #                 and calls. In order, the columns are the strike, the
   #                 time to maturity in years, the IV and the moneyness (K/S)
@@ -55,7 +61,7 @@ f_vol_param <- function(alpha, option_info) {
   ### Function that computes the parametric volatility
   
   #  INPUTS
-  #   alpha       : [vector] (5 x 1) of the values of the parameters
+  #   alpha       : [vector] (4 x 1) of the values of the parameters
   #   option_info : [matrix] (T x 4) of the information about both puts
   #                 and calls. In order, the columns are the strike, the
   #                 time to maturity in years, the IV and the moneyness (K/S)
@@ -77,10 +83,11 @@ f_vol_param <- function(alpha, option_info) {
   
 }
 
+
 f_option_info <- function(call_info, put_info, last_price) {
   
-  ### Function that finds the parameters in order to minimize the
-  ### objective function 
+  ### Function that collects the information about the puts and the calls
+  ### which will be needed in the construction of the volatility surface
   
   #  INPUTS
   #   call_info  : [matrix] (T x 3) of the information about calls. In order, 
@@ -96,14 +103,19 @@ f_option_info <- function(call_info, put_info, last_price) {
   #                 and calls. In order, the columns are the strike, the
   #                 time to maturity in years, the IV and the moneyness (K/S)
   
-  # Combine call information and put information
-  option_info <- rbind(call_info, put_info)
-  
-  # Ad the moneyness to the information
+  # Add the moneyness to the information
   last_price  <- as.numeric(last_price)
-  m           <- option_info[,1] / as.numeric(last_price)
-  option_info <- cbind(option_info, m)
+  m_call      <- call_info[,1] / as.numeric(last_price)
+  m_put       <- put_info[,1] / as.numeric(last_price)
   
+  call_info <- cbind(call_info, m_call)
+  put_info  <- cbind(put_info, m_put)
+  
+  # Get OTM puts (m<1) and calls (m>1) 
+  call_info <- call_info[call_info[,4]>=1,]
+  put_info  <- put_info[put_info[,4]<=1,]
+  
+  # Combine OTM call information and put information
+  option_info <- rbind(call_info, put_info)
   option_info
-  
 }

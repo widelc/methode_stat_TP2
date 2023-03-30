@@ -71,8 +71,7 @@ price_simul <- f_price_simul_univariate(rets, price_init, d_simul, n_simul)
 
 # Option prices in 5 days from simulated prices
 last              <- cbind(price_simul, rep(last_vol, n_simul))
-portfolio$tau     <- portfolio$tau - d_simul
-option_simul_uni  <- apply(last, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+option_simul_uni  <- apply(last, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_uni <- f_VaR_ES_PL(init_value, option_simul_uni, level = 0.95)
@@ -109,7 +108,7 @@ price_init     <- c(last_price, last_vol)
 price_simul_bi <- f_price_simul_bivariate(rets, price_init, d_simul, n_simul) 
 
 # Option prices in 5 days from simulated prices
-option_simul_bi <- apply(price_simul_bi, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+option_simul_bi <- apply(price_simul_bi, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_bi <- f_VaR_ES_PL(init_value, option_simul_bi, level = 0.95)
@@ -139,7 +138,7 @@ nu              <- c(10, 5)
 price_simul_cop <- f_price_simul_copula(rets, nu, price_init, d_simul, n_simul)
 
 # Option prices in 5 days from simulated prices
-option_simul_cop <- apply(price_simul_cop, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+option_simul_cop <- apply(price_simul_cop, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_cop <- f_VaR_ES_PL(init_value, option_simul_cop, level = 0.95)
@@ -165,12 +164,8 @@ f_png_save(result_cop$PL, title, result_cop$VaR, y_max = 0.006, file_name)
 ```{r}
 
 # Option info + add moneyness to info
-option_info <-f_option_info(call_info, put_info, last_price)
-
-# Paramters for the parametric from of the volatility and find the the parametric vol
-alpha     <- f_opt_alpha(option_info)
-vol_param <- f_vol_param(alpha, option_info)
-
+option_info <- f_option_info(call_info, put_info, last_price)
+alpha       <- f_opt_alpha(option_info)
 
 ```
 
@@ -182,7 +177,7 @@ vol_param <- f_vol_param(alpha, option_info)
 price_simul_compl <- f_price_simul_complete(rets, price_init, d_simul, n_simul)
 
 # Option prices in 5 days from simulated prices
-option_simul_compl <- apply(price_simul_compl, 1, f_eval_portfolio, portfolio = portfolio, int_rate = int_rate)
+option_simul_compl <- apply(price_simul_compl, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_compl <- f_VaR_ES_PL(init_value, option_simul_compl, level = 0.95)
