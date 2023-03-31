@@ -20,7 +20,7 @@ source(here("function", "f_price_simul_univariate.R"))
 source(here("function", "f_price_simul_bivariate.R"))
 source(here("function", "f_price_simul_copula.R"))
 source(here("function", "f_price_simul_complete.R"))
-source(here("function", "f_volatility_surface.R"))
+source(here("function", "f_price_simul_surface.R"))
 source(here("function", "f_VaR_ES_PL.R"))
 source(here("function", "f_plot_pdf.R"))
 
@@ -71,7 +71,12 @@ price_simul <- f_price_simul_univariate(rets, price_init, d_simul, n_simul)
 
 # Option prices in 5 days from simulated prices
 last              <- cbind(price_simul, rep(last_vol, n_simul))
-option_simul_uni  <- apply(last, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
+option_simul_uni  <- apply(X         = last, 
+                           MARGIN    = 1, 
+                           FUN       = f_eval_portfolio, 
+                           portfolio = portfolio, 
+                           int_rate  = int_rate, 
+                           d_simul   = d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_uni <- f_VaR_ES_PL(init_value, option_simul_uni, level = 0.95)
@@ -85,12 +90,8 @@ cat("ES  at 95% is",sprintf("%f", result_uni$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title       <- "Options portfolio P&L distribution (univariate model)"
-file_name   <- "univariate_distribution"
-
-f_plot_pdf(result_uni$PL, title, result_uni$VaR, y_max = 0.005)
-f_png_save(result_uni$PL, title, result_uni$VaR, y_max = 0.005, file_name)
-
+f_plot_pdf(result_uni, model = "Univariate Model")
+f_png_save(result_uni, model = "Univariate Model", file_name = "univariate_distribution")
 ```
 
 ## Deux facteurs de risque et modèle gaussien
@@ -108,7 +109,12 @@ price_init     <- c(last_price, last_vol)
 price_simul_bi <- f_price_simul_bivariate(rets, price_init, d_simul, n_simul) 
 
 # Option prices in 5 days from simulated prices
-option_simul_bi <- apply(price_simul_bi, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
+option_simul_bi <- apply(X         = price_simul_bi, 
+                         MARGIN    = 1, 
+                         FUN       = f_eval_portfolio, 
+                         portfolio = portfolio, 
+                         int_rate  = int_rate, 
+                         d_simul   = d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_bi <- f_VaR_ES_PL(init_value, option_simul_bi, level = 0.95)
@@ -122,11 +128,8 @@ cat("ES  at 95% is",sprintf("%f", result_bi$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title      <- "Options portfolio P&L distribution (bivariate model)"
-file_name  <- "bivariate_distribution"
-
-f_plot_pdf(result_bi$PL, title, result_bi$VaR, y_max = 0.005)
-f_png_save(result_bi$PL, title, result_bi$VaR, y_max = 0.005, file_name)
+f_plot_pdf(result_bi, model = "Bivariate Model")
+f_png_save(result_bi, model = "Bivariate Model", file_name = "bivariate_distribution")
 ```
 
 ## Deux facteurs de risque et modèle copule-marginal
@@ -138,7 +141,12 @@ nu              <- c(10, 5)
 price_simul_cop <- f_price_simul_copula(rets, nu, price_init, d_simul, n_simul)
 
 # Option prices in 5 days from simulated prices
-option_simul_cop <- apply(price_simul_cop, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
+option_simul_cop <- apply(X         = price_simul_cop, 
+                          MARGIN    = 1, 
+                          FUN       = f_eval_portfolio, 
+                          portfolio = portfolio, 
+                          int_rate  = int_rate, 
+                          d_simul   = d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_cop <- f_VaR_ES_PL(init_value, option_simul_cop, level = 0.95)
@@ -152,21 +160,42 @@ cat("ES  at 95% is",sprintf("%f", result_cop$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title       <- "Options portfolio P&L distribution (copula model)"
-file_name   <- "copula"
-
-f_plot_pdf(result_cop$PL, title, result_cop$VaR, y_max = 0.006)
-f_png_save(result_cop$PL, title, result_cop$VaR, y_max = 0.006, file_name)
+f_plot_pdf(result_cop, model = "Copula Model")
+f_png_save(result_cop, model = "Copula Model", file_name = "copula")
 ```
 
 ## Surface de volatilité
 
 ```{r}
 
-# Option info + add moneyness to info
-option_info <- f_option_info(call_info, put_info, last_price)
-alpha       <- f_opt_alpha(option_info)
+# Option info + fit volatility surface + adjust vol simulation from las method
+option_info      <- f_option_info(call_info, put_info, last_price)
+alpha            <- f_opt_alpha(option_info)
+price_simul_surf <- f_price_simul_vol(alpha, last_vol, price_simul_cop)
 
+# Option prices in 5 days from simulated prices
+option_simul_surf <- apply(X         = price_simul_surf, 
+                           MARGIN    = 1, 
+                           FUN       = f_eval_portfolio, 
+                           portfolio = portfolio, 
+                           int_rate  = int_rate, 
+                           d_simul   = d_simul)
+
+# Compute VaR95, ES95 and P&L
+result_surf <- f_VaR_ES_PL(init_value, option_simul_surf, level = 0.95)
+
+# Result for risk mesure
+cat("With the Gaussian copula and Student marginals : \n")
+cat("VaR at 95% is",sprintf("%f", result_surf$VaR), "$\n")
+cat("ES  at 95% is",sprintf("%f", result_surf$ES), "$\n")
+
+```
+
+```{r}
+
+# P&L distribution
+f_plot_pdf(result_surf, model = "Parametric Volatility Surface Model")
+f_png_save(result_surf, model = "Parametric Volatility Surface Model", file_name = "vol_surface")
 ```
 
 ## Approche complète
@@ -177,7 +206,12 @@ alpha       <- f_opt_alpha(option_info)
 price_simul_compl <- f_price_simul_complete(rets, price_init, d_simul, n_simul)
 
 # Option prices in 5 days from simulated prices
-option_simul_compl <- apply(price_simul_compl, 1, f_eval_portfolio, portfolio=portfolio, int_rate=int_rate, d_simul=d_simul)
+option_simul_compl <- apply(X         = price_simul_compl, 
+                            MARGIN    = 1, 
+                            FUN       = f_eval_portfolio, 
+                            portfolio = portfolio, 
+                            int_rate  = int_rate, 
+                            d_simul   = d_simul)
 
 # Compute VaR95, ES95 and P&L
 result_compl <- f_VaR_ES_PL(init_value, option_simul_compl, level = 0.95)
@@ -192,21 +226,20 @@ cat("ES  at 95% is",sprintf("%f", result_compl$ES), "$\n")
 ```{r}
 
 # P&L distribution
-title         <- "Options portfolio P&L distribution (complete model)"
-file_name     <- "complete"
-
-f_plot_pdf(result_compl$PL, title, result_compl$VaR, y_max = 0.01)
-f_png_save(result_compl$PL, title, result_compl$VaR, y_max = 0.01, file_name)
+f_plot_pdf(result_compl, model = "Complete Model")
+f_png_save(result_compl, model = "Complete Model", file_name = "complete")
 ```
 
-## Comparaison des approches (surface de vol à ajouté)
+## Comparaison des approches
 
 ```{r}
 
-df <- data.frame(Univariate = result_uni$PL,
-                 Bivariate  = result_bi$PL,
-                 Copula     = result_cop$PL,
-                 Complete   = result_compl$PL)
+# Boxplot
+df <- data.frame(Univariate  = result_uni$PL,
+                 Bivariate   = result_bi$PL,
+                 Copula      = result_cop$PL,
+                 Vol_Surface = result_surf$PL,
+                 Complete    = result_compl$PL)
 
 chart.Boxplot(df)
 ```
