@@ -26,10 +26,20 @@ f_eval_portfolio <- function(last, portfolio, int_rate, d_simul = 0) {
   tau_port <- portfolio$tau / 360
   r        <- approx(tau_rate, int_rate, xout = tau_port)$y
   
+  # Implied volatility for each option
+  n_last <- length(last)
+  if (n_last == 2) {
+    # Case where there is only 1 vol for every option
+    IV <- as.numeric(last[2])
+  } else {
+    # Case where there is a vol for each option
+    IV <- last[2:n_last]
+  }
+  
   # Option prices with Black and Scholes
   S       <- as.numeric(last[1])
   K       <- portfolio$Strike
-  IV      <- as.numeric(last[2])
+  #IV      <- as.numeric(last[2])
   is_call <- portfolio$is_call
   tau_opt <- (portfolio$tau - d_simul) / 250
   

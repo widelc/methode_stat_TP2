@@ -1,5 +1,5 @@
 
-f_price_simul_vol <- function(alpha, last_vol, price_simul) {
+f_price_simul_vol <- function(alpha, last_vol, price_simul, portfolio, d_simul) {
   
   ### Function that adjusts the values from a prediction of the VIX with
   ### with a parametric volatility surface
@@ -10,18 +10,37 @@ f_price_simul_vol <- function(alpha, last_vol, price_simul) {
   #   last_vol    : The value of the VIX now (last known value of the VIX)
   #   price_simul : [matrix] (n_simul x 2) of all the simulated prices (for 
   #                 index and vol) from one of the previous methods
+  #   portfolio   : [list] of information about the option portfolio (see NOTE)
+  #   d_simul     : [scalar] Number of days ahead we want to simulate prices
   
   #  OUTPUTS
-  #   price_simul : [matrix] (n_simul x 2) of all the simulated prices (for 
+  #   price_simul : [matrix] (n_simul x n_option) of all the simulated prices (for 
   #                 index and vol) with an adjustment made for the volatility
   
+  #  NOTE
+  #   o The input 'portfolio' is as list that contains :
+  #       Qty     : [vector] (T x 1) Quantity of each options in the portfolio
+  #       Strike  : [vector] (T x 1) Strike of each options in the portfolio
+  #       tau     : [vector] (T x 1) Time to maturity of each options in the portfolio
+  #       is_call : [vector] (T x 1) Boolean (TRUE for calls, FALSE for puts) 
   
+  # Compute initial delta between VIX and parametric volatility (ATM)
   vol_ATM_param   <- alpha[1] + alpha[4]
   delta_vol_param <- as.numeric(last_vol - vol_ATM_param)
   
-  price_simul[,2] <- price_simul[,2] - delta_vol_param
+  # Compute the IV in 5 days from simulated price and portfolio
+  K         <- as.matrix(portfolio$Strike)
+  m_futur   <- apply(K, 1, function(x) x / price_simul[,1])
+  tau_futur <- (portfolio$tau - d_simul) / 250
+  IV_future <- t(apply(m_futur, 1, f_vol_param, tau = tau_futur, alpha = alpha))
   
+  # Correct the IV with the delta initially computed
+  IV_future_corrected <- IV_future + delta_vol_param
+  
+  # Output format
+  price_simul <- cbind(price_simul[,1], IV_future_corrected)
   price_simul
+  
 }
 
 
@@ -65,7 +84,9 @@ f_objective <- function(alpha, option_info) {
   vol_mkt   <- option_info[,3] 
   
   # Parametric volatility
-  vol_param <- f_vol_param(alpha, option_info)
+  tau <- option_info[,2]
+  m   <- option_info[,4]
+  vol_param <- f_vol_param(m, tau, alpha)
   
   # Objective function
   obj <- sum(abs(vol_mkt - vol_param))
@@ -78,15 +99,14 @@ f_objective <- function(alpha, option_info) {
 }
 
 
-f_vol_param <- function(alpha, option_info) {
+f_vol_param <- function(m, tau, alpha) {
   
   ### Function that computes the parametric volatility
   
   #  INPUTS
   #   alpha       : [vector] (4 x 1) of the values of the parameters
-  #   option_info : [matrix] (T x 4) of the information about both puts
-  #                 and calls. In order, the columns are the strike, the
-  #                 time to maturity in years, the IV and the moneyness (K/S)
+  #   m           : [vector] (T x 1) of the moneyness (K/S)
+  #   tau         : [vector] (T x 1) of the time to maturity in years
   
   #  OUTPUTS
   #   vol_param : [vector] (T x 1) of the computed volatility
@@ -95,9 +115,6 @@ f_vol_param <- function(alpha, option_info) {
   alpha_2 <- alpha[2]
   alpha_3 <- alpha[3]
   alpha_4 <- alpha[4]
-  
-  tau <- option_info[,2]
-  m   <- option_info[,4]
   
   # Compute parametric volatility
   vol_param <- alpha_1 + alpha_2 * (m-1)^2 + alpha_3 * (m-1)^3 + alpha_4 * sqrt(tau)
