@@ -44,6 +44,47 @@ f_price_simul_vol <- function(alpha, last_vol, price_simul, portfolio, d_simul) 
 }
 
 
+f_init_vol_param <- function(alpha, price_init, portfolio) {
+  
+  ### Function that computes the initial value of a portfolio with parametric model
+  
+  #  INPUTS
+  #   alpha       : [vector] (4 x 1) of the values of the parameters for the 
+  #                 volatility surface
+  #   price_init :  [vector] (2 x 1) of prices from which we start simulating (last price and last vol)
+  #   portfolio   : [list] of information about the option portfolio (see NOTE)
+  
+  #  OUTPUTS
+  #    IV_corrected : [vector] (4 x 1) of initial parametric volatility
+  
+  #  NOTE
+  #   o The input 'portfolio' is as list that contains :
+  #       Qty     : [vector] (T x 1) Quantity of each options in the portfolio
+  #       Strike  : [vector] (T x 1) Strike of each options in the portfolio
+  #       tau     : [vector] (T x 1) Time to maturity of each options in the portfolio
+  #       is_call : [vector] (T x 1) Boolean (TRUE for calls, FALSE for puts) 
+  
+  last_price <- as.numeric(price_init[1])
+  last_vol   <- as.numeric(price_init[2])
+  
+  # Compute initial delta between VIX and parametric volatility (ATM)
+  vol_ATM_param   <- alpha[1] + alpha[4]
+  delta_vol_param <- as.numeric(last_vol - vol_ATM_param)
+  
+  # Compute the IV now with parametric model
+  K   <- as.matrix(portfolio$Strike)
+  m   <- K / last_price
+  tau <- (portfolio$tau) / 250
+  IV  <- f_vol_param(m_futur, tau_futur, alpha)
+  
+  # Correct the IV with the delta initially computed
+  IV_corrected <- IV + delta_vol_param
+  
+  IV_corrected
+}
+  
+
+
 f_opt_alpha <- function(option_info) {
   
   ### Function that finds the parameters (alpha) in order to minimize the

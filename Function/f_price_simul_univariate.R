@@ -24,8 +24,8 @@ f_price_simul_univariate <- function(rets, price_init, d_simul, n_simul) {
   rets_simul <- rnorm(d_simul * n_simul, mean = theta[1], sd = theta[2])
   rets_simul <- matrix(rets_simul, nrow = n_simul, ncol = d_simul)
   
-  # Translation from returns to price in 5 days
-  price_simul <- as.numeric(price_init) * apply(1 + rets_simul, 1, cumprod)[d_simul,] 
+  # Translation from log-returns to price in 5 days
+  price_simul <- as.numeric(price_init) * apply(1 + rets_simul, 1, cumprod)[d_simul,]
   
   # Output
   price_simul

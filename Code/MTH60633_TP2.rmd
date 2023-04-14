@@ -4,12 +4,11 @@ author: "William Delisle, Rémi Mailhot, Laurent Vienneau et Mathieu Verville"
 date: '2023-02-25'
 output:
   html_document: default
-  pdf_document: default
 ---
 
 ## Importation des données
 
-```{r}
+```{r, warning = FALSE}
 
 # Import libraries & functions
 library("PerformanceAnalytics")
@@ -37,7 +36,7 @@ put_info     <- Market$puts
 
 ## Fixation du prix d'un portefeuille d'options
 
-```{r}
+```{r, warning = FALSE}
 
 # Option portfolio description
 last_price <- last(SP500_prices)
@@ -55,8 +54,7 @@ cat("The initial value of the portfolio is :",sprintf("%f", init_value), "$\n")
 
 ## Un facteur de risque et un modèle gaussien
 
-```{r}
-
+```{r, warning = FALSE}
 # Calculate log returns for S&P500
 rets <- CalculateReturns(SP500_prices, method = "log")
 rets <- rets[-1,]
@@ -87,7 +85,7 @@ cat("VaR at 95% is",sprintf("%f", result_uni$VaR), "$\n")
 cat("ES  at 95% is",sprintf("%f", result_uni$ES), "$\n")
 ```
 
-```{r}
+```{r, warning = FALSE}
 
 # P&L distribution
 f_plot_pdf(result_uni, model = "Univariate Model")
@@ -96,7 +94,7 @@ f_png_save(result_uni, model = "Univariate Model", file_name = "univariate_distr
 
 ## Deux facteurs de risque et modèle gaussien
 
-```{r}
+```{r, warning = FALSE}
 
 # Calculate log returns for S&P500 & VIX
 rets_SP500 <- rets
@@ -125,7 +123,7 @@ cat("VaR at 95% is",sprintf("%f", result_bi$VaR), "$\n")
 cat("ES  at 95% is",sprintf("%f", result_bi$ES), "$\n")
 ```
 
-```{r}
+```{r, warning = FALSE}
 
 # P&L distribution
 f_plot_pdf(result_bi, model = "Bivariate Model")
@@ -134,7 +132,7 @@ f_png_save(result_bi, model = "Bivariate Model", file_name = "bivariate_distribu
 
 ## Deux facteurs de risque et modèle copule-marginal
 
-```{r}
+```{r, warning = FALSE}
 
 # Simulating prices for S&P500 and VIX
 nu              <- c(10, 5)
@@ -157,7 +155,7 @@ cat("VaR at 95% is",sprintf("%f", result_cop$VaR), "$\n")
 cat("ES  at 95% is",sprintf("%f", result_cop$ES), "$\n")
 ```
 
-```{r}
+```{r, warning = FALSE}
 
 # P&L distribution
 f_plot_pdf(result_cop, model = "Copula Model")
@@ -166,7 +164,7 @@ f_png_save(result_cop, model = "Copula Model", file_name = "copula")
 
 ## Surface de volatilité
 
-```{r}
+```{r, warning = FALSE}
 
 # Option info + fit volatility surface + adjust vol simulation from las method
 option_info      <- f_option_info(call_info, put_info, last_price)
@@ -184,7 +182,10 @@ option_simul_surf <- apply(X         = price_simul_surf,
                            d_simul   = d_simul)
 
 # Compute VaR95, ES95 and P&L
-result_surf <- f_VaR_ES_PL(init_value, option_simul_surf, level = 0.95)
+vol_param_init  <- f_init_vol_param(alpha, price_init, portfolio)
+last_surf       <- c(as.numeric(last_price), vol_param_init)
+init_value_surf <- f_eval_portfolio(last_surf, portfolio, int_rate)
+result_surf     <- f_VaR_ES_PL(init_value_surf, option_simul_surf, level = 0.95)
 
 # Result for risk mesure
 cat("With the Parametric Volatility Surface Model: \n")
@@ -193,7 +194,7 @@ cat("ES  at 95% is",sprintf("%f", result_surf$ES), "$\n")
 
 ```
 
-```{r}
+```{r, warning = FALSE}
 
 # P&L distribution
 f_plot_pdf(result_surf, model = "Parametric Volatility Surface Model")
@@ -202,7 +203,7 @@ f_png_save(result_surf, model = "Parametric Volatility Surface Model", file_name
 
 ## Approche complète
 
-```{r}
+```{r, warning = FALSE}
 
 # Simulating prices for S&P500 and VIX
 price_simul_compl <- f_price_simul_complete(rets, price_init, d_simul, n_simul)
@@ -225,23 +226,9 @@ cat("ES  at 95% is",sprintf("%f", result_compl$ES), "$\n")
 
 ```
 
-```{r}
+```{r, warning = FALSE}
 
 # P&L distribution
 f_plot_pdf(result_compl, model = "Complete Model")
 f_png_save(result_compl, model = "Complete Model", file_name = "complete")
-```
-
-## Comparaison des approches
-
-```{r}
-
-# Boxplot
-df <- data.frame(Univariate  = result_uni$PL,
-                 Bivariate   = result_bi$PL,
-                 Copula      = result_cop$PL,
-                 Vol_Surface = result_surf$PL,
-                 Complete    = result_compl$PL)
-
-chart.Boxplot(df)
 ```
