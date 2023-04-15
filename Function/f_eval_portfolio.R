@@ -21,7 +21,7 @@ f_eval_portfolio <- function(last, portfolio, int_rate, d_simul = 0) {
           
 
   
-  # Interest rate for each options (linear interpolation)
+  # Interest rate for each option (linear interpolation)
   tau_rate <- as.numeric(names(int_rate))
   tau_port <- portfolio$tau / 360
   r        <- approx(tau_rate, int_rate, xout = tau_port)$y
@@ -39,7 +39,6 @@ f_eval_portfolio <- function(last, portfolio, int_rate, d_simul = 0) {
   # Option prices with Black and Scholes
   S       <- as.numeric(last[1])
   K       <- portfolio$Strike
-  #IV      <- as.numeric(last[2])
   is_call <- portfolio$is_call
   tau_opt <- (portfolio$tau - d_simul) / 250
   

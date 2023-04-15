@@ -7,10 +7,10 @@ f_price_simul_bivariate <- function(rets, price_init, d_simul, n_simul) {
   ### from a bivariate Gaussian model
   
   #  INPUTS
-  #   rets       : [matrix] (T x 2) of returns from past price ans volatility of the asset
+  #   rets       : [matrix] (T x 2) of returns from past price and volatility of the asset
   #   price_init : [vector] (2 x 1) of prices from which we start simulating (last price and last vol)
   #   d_simul    : [scalar] Number of days ahead we want to simulate prices
-  #   n_simul    : [scalar] Number of simulated path we want
+  #   n_simul    : [scalar] Number of simulated paths we want
   
   #  OUTPUTS
   #   price_simul : [matrix] (n_simul x 2) of all the simulated prices (for index and vol)
@@ -62,7 +62,7 @@ f_opt_bi <- function(x) {
   sig <- as.vector(cov(x))
   theta_0 <- c(mu, sig[1], sig[4], sig[3])
   
-  # Optimize log-likelyhood function
+  # Optimize log-likelihood function
   opt <- optim(par    = theta_0, 
                fn     = f_nll_n_bi,
                x      = x,

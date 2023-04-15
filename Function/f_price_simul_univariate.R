@@ -7,7 +7,7 @@ f_price_simul_univariate <- function(rets, price_init, d_simul, n_simul) {
   #   rets       : [vector] (T x 1) of returns from past price of the asset
   #   price_init : [scalar] Price from which we start simulating (last price)
   #   d_simul    : [scalar] Number of days ahead we want to simulate prices
-  #   n_simul    : [scalar] Number of simulated path we want
+  #   n_simul    : [scalar] Number of simulated paths we want
   
   #  OUTPUTS
   #   price_simul : [vector] (n_simul x 1) of all the simulated prices

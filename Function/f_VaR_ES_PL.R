@@ -32,7 +32,7 @@ f_profits_and_loss <- function(init_price, simul_price) {
   #   simul_price : [vector] (n_simul x 1) of simulated future prices
   
   #  OUTPUTS
-  #   PL : [vector] (n_simul x 1) of profits ans loss
+  #   PL : [vector] (n_simul x 1) of profit and loss
   
   PL <- simul_price - init_price
   PL

@@ -19,9 +19,9 @@ f_price_simul_vol <- function(alpha, last_vol, price_simul, portfolio, d_simul) 
   
   #  NOTE
   #   o The input 'portfolio' is as list that contains :
-  #       Qty     : [vector] (T x 1) Quantity of each options in the portfolio
-  #       Strike  : [vector] (T x 1) Strike of each options in the portfolio
-  #       tau     : [vector] (T x 1) Time to maturity of each options in the portfolio
+  #       Qty     : [vector] (T x 1) Quantity of each option in the portfolio
+  #       Strike  : [vector] (T x 1) Strike of each option in the portfolio
+  #       tau     : [vector] (T x 1) Time to maturity of each option in the portfolio
   #       is_call : [vector] (T x 1) Boolean (TRUE for calls, FALSE for puts) 
   
   # Compute initial delta between VIX and parametric volatility (ATM)
@@ -59,9 +59,9 @@ f_init_vol_param <- function(alpha, price_init, portfolio) {
   
   #  NOTE
   #   o The input 'portfolio' is as list that contains :
-  #       Qty     : [vector] (T x 1) Quantity of each options in the portfolio
-  #       Strike  : [vector] (T x 1) Strike of each options in the portfolio
-  #       tau     : [vector] (T x 1) Time to maturity of each options in the portfolio
+  #       Qty     : [vector] (T x 1) Quantity of each option in the portfolio
+  #       Strike  : [vector] (T x 1) Strike of each option in the portfolio
+  #       tau     : [vector] (T x 1) Time to maturity of each option in the portfolio
   #       is_call : [vector] (T x 1) Boolean (TRUE for calls, FALSE for puts) 
   
   last_price <- as.numeric(price_init[1])
@@ -75,7 +75,7 @@ f_init_vol_param <- function(alpha, price_init, portfolio) {
   K   <- as.matrix(portfolio$Strike)
   m   <- K / last_price
   tau <- (portfolio$tau) / 250
-  IV  <- f_vol_param(m_futur, tau_futur, alpha)
+  IV  <- f_vol_param(m, tau, alpha)
   
   # Correct the IV with the delta initially computed
   IV_corrected <- IV + delta_vol_param
@@ -173,7 +173,7 @@ f_option_info <- function(call_info, put_info, last_price) {
   #   call_info  : [matrix] (T x 3) of the information about calls. In order, 
   #                the columns are the strike, the time to maturity in years 
   #                and the implied volatility (IV)
-  #   put_info   : [matrix] (T x 3) of the information about calls. In order, 
+  #   put_info   : [matrix] (T x 3) of the information about puts. In order, 
   #                the columns are the strike, the time to maturity in years 
   #                and the implied volatility (IV)
   #   last_price : [scalar] Price for which the information is given

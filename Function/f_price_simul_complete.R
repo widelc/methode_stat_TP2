@@ -8,24 +8,14 @@ f_price_simul_complete <- function(rets, price_init, d_simul, n_simul) {
   ### and AR(1) for the volatility index
   
   #  INPUTS
-  #   rets       : [matrix] (T x 2) of returns from past price ans volatility of the asset
+  #   rets       : [matrix] (T x 2) of returns from past price and volatility of the asset
   #   price_init : [vector] (2 x 1) of prices from which we start simulating (last price and last vol)
   #   d_simul    : [scalar] Number of days ahead we want to simulate prices
-  #   n_simul    : [scalar] Number of simulated path we want
+  #   n_simul    : [scalar] Number of simulated paths we want
   
   #  OUTPUTS
   #   price_simul : [matrix] (n_simul x 2) of all the simulated prices (for index and vol)
-  
-  rets_index <- rets[,1]
-  rets_vol   <- rets[,2]
-  
-  # Fit data to residuals marginals to Gaussian models 
-  GARCH_index <- f_GARCH(rets_index)
-  AR1_vol     <- f_AR1(rets_vol)
-  
-  theta_res_index <- f_opt(GARCH_index$res)
-  theta_res_vol   <- f_opt(AR1_vol$res)
-  
+ 
   # Fit Gaussian copula to data
   fit  <- f_fit_residuals_copula(rets)
   
@@ -82,7 +72,7 @@ f_fit_residuals_copula <- function(rets) {
   ### a Gaussian copula.
   
   #  INPUTS
-  #   x  : [matrix] (T x 2) of observations
+  #   rets  : [matrix] (T x 2) of returns
   
   #  OUTPUTS
   #   fit : Fitted copula
@@ -121,7 +111,7 @@ f_AR1 <- function(y) {
   #   y     : [vector] (T x 1) of observations (log-returns)
   
   #  OUTPUTS
-  #   out : [list] of  1) theta : GARCH model parameters
+  #   out : [list] of  1) theta : AR1 model parameters
   #                    2) res   : (T x 1) of empirical residual
   
   y <- as.matrix(y)
