@@ -9,11 +9,11 @@ f_price_simul_copula <- function(rets, nu, price_init, d_simul, n_simul) {
   ### from a Gaussian copula and Student marginals
   
   #  INPUTS
-  #   rets       : [matrix] (T x 2) of returns from past price ans volatility of the asset
+  #   rets       : [matrix] (T x 2) of returns from past price and volatility of the asset
   #   nu : [vector] (2 x 1) student parameter for both indexes marginals
   #   price_init : [vector] (2 x 1) of prices from which we start simulating (last price and last vol)
   #   d_simul    : [scalar] Number of days ahead we want to simulate prices
-  #   n_simul    : [scalar] Number of simulated path we want
+  #   n_simul    : [scalar] Number of simulated paths we want
   
   #  OUTPUTS
   #   price_simul : [matrix] (n_simul x 2) of all the simulated prices (for index and vol)
@@ -21,7 +21,7 @@ f_price_simul_copula <- function(rets, nu, price_init, d_simul, n_simul) {
   #  NOTE
   #   o the estimations are done by maximum likelihood
   
-  # Fit data to student models
+  # Fit data to student models (marginals)
   theta       <- f_fit_marginals_t(rets, nu)
   theta_index <- theta$index
   theta_vol   <- theta$vol
@@ -40,8 +40,8 @@ f_price_simul_copula <- function(rets, nu, price_init, d_simul, n_simul) {
   rets_vol_simul   <- matrix(rets_vol_simul, nrow = n_simul, ncol = d_simul)
   
   # Translation from returns to price in 5 days
-  index_simul <- price_init[1] * apply(1 + rets_index_simul, 1, cumprod)[d_simul,] 
-  vol_simul   <- price_init[2] * apply(1 + rets_vol_simul, 1, cumprod)[d_simul,] 
+  index_simul <- as.numeric(price_init[1]) * apply(1 + rets_index_simul, 1, cumprod)[d_simul,] 
+  vol_simul   <- as.numeric(price_init[2]) * apply(1 + rets_vol_simul, 1, cumprod)[d_simul,] 
   
   # Output
   price_simul <- cbind(index_simul, vol_simul)
@@ -59,8 +59,7 @@ f_fit_copula <- function(x, nu) {
   #   nu : [vector] (2 x 1) student parameter for both indexes marginals
   
   #  OUTPUTS
-  #   theta : [list] containing the mean and standard deviation estimated
-  #           for both indexes.
+  #   fit : Fitted copula
   
   # Fit data to student models
   theta       <- f_fit_marginals_t(x, nu)

@@ -1,0 +1,204 @@
+
+f_price_simul_vol <- function(alpha, last_vol, price_simul, portfolio, d_simul) {
+  
+  ### Function that adjusts the values from a prediction of the VIX with
+  ### with a parametric volatility surface
+  
+  #  INPUTS
+  #   alpha       : [vector] (4 x 1) of the values of the parameters for the 
+  #                 volatility surface
+  #   last_vol    : The value of the VIX now (last known value of the VIX)
+  #   price_simul : [matrix] (n_simul x 2) of all the simulated prices (for 
+  #                 index and vol) from one of the previous methods
+  #   portfolio   : [list] of information about the option portfolio (see NOTE)
+  #   d_simul     : [scalar] Number of days ahead we want to simulate prices
+  
+  #  OUTPUTS
+  #   price_simul : [matrix] (n_simul x n_option) of all the simulated prices (for 
+  #                 index and vol) with an adjustment made for the volatility
+  
+  #  NOTE
+  #   o The input 'portfolio' is as list that contains :
+  #       Qty     : [vector] (T x 1) Quantity of each option in the portfolio
+  #       Strike  : [vector] (T x 1) Strike of each option in the portfolio
+  #       tau     : [vector] (T x 1) Time to maturity of each option in the portfolio
+  #       is_call : [vector] (T x 1) Boolean (TRUE for calls, FALSE for puts) 
+  
+  # Compute initial delta between VIX and parametric volatility (ATM)
+  vol_ATM_param   <- alpha[1] + alpha[4]
+  delta_vol_param <- as.numeric(last_vol - vol_ATM_param)
+  
+  # Compute the IV in 5 days from simulated price and portfolio
+  K         <- as.matrix(portfolio$Strike)
+  m_futur   <- apply(K, 1, function(x) x / price_simul[,1])
+  tau_futur <- (portfolio$tau - d_simul) / 250
+  IV_future <- t(apply(m_futur, 1, f_vol_param, tau = tau_futur, alpha = alpha))
+  
+  # Correct the IV with the delta initially computed
+  IV_future_corrected <- IV_future + delta_vol_param
+  
+  # Output format
+  price_simul <- cbind(price_simul[,1], IV_future_corrected)
+  price_simul
+  
+}
+
+
+f_init_vol_param <- function(alpha, price_init, portfolio) {
+  
+  ### Function that computes the initial value of a portfolio with parametric model
+  
+  #  INPUTS
+  #   alpha       : [vector] (4 x 1) of the values of the parameters for the 
+  #                 volatility surface
+  #   price_init :  [vector] (2 x 1) of prices from which we start simulating (last price and last vol)
+  #   portfolio   : [list] of information about the option portfolio (see NOTE)
+  
+  #  OUTPUTS
+  #    IV_corrected : [vector] (4 x 1) of initial parametric volatility
+  
+  #  NOTE
+  #   o The input 'portfolio' is as list that contains :
+  #       Qty     : [vector] (T x 1) Quantity of each option in the portfolio
+  #       Strike  : [vector] (T x 1) Strike of each option in the portfolio
+  #       tau     : [vector] (T x 1) Time to maturity of each option in the portfolio
+  #       is_call : [vector] (T x 1) Boolean (TRUE for calls, FALSE for puts) 
+  
+  last_price <- as.numeric(price_init[1])
+  last_vol   <- as.numeric(price_init[2])
+  
+  # Compute initial delta between VIX and parametric volatility (ATM)
+  vol_ATM_param   <- alpha[1] + alpha[4]
+  delta_vol_param <- as.numeric(last_vol - vol_ATM_param)
+  
+  # Compute the IV now with parametric model
+  K   <- as.matrix(portfolio$Strike)
+  m   <- K / last_price
+  tau <- (portfolio$tau) / 250
+  IV  <- f_vol_param(m, tau, alpha)
+  
+  # Correct the IV with the delta initially computed
+  IV_corrected <- IV + delta_vol_param
+  
+  IV_corrected
+}
+  
+
+
+f_opt_alpha <- function(option_info) {
+  
+  ### Function that finds the parameters (alpha) in order to minimize the
+  ### objective function. Only OTM puts and calls are used for the 
+  ### optimization.
+  
+  #  INPUTS
+  #   option_info : [matrix] (T x 4) of the information about both puts
+  #                 and calls. In order, the columns are the strike, the
+  #                 time to maturity in years, the IV and the moneyness (K/S)
+  
+  #  OUTPUTS
+  #   alpha : [vector] (4 x 1) of the values of the parameters
+  
+  # Optimize
+  alpha0 <- rep(0.1, 4)
+  alpha  <- optim(par = alpha0,
+                  fn  = f_objective,
+                  option_info = option_info)$par
+  alpha
+}
+
+
+f_objective <- function(alpha, option_info) {
+  
+  ### Function that defines the objective function to minimize
+  
+  #  INPUTS
+  #   alpha       : [vector] (4 x 1) of the values of the parameters
+  #   option_info : [matrix] (T x 4) of the information about both puts
+  #                 and calls. In order, the columns are the strike, the
+  #                 time to maturity in years, the IV and the moneyness (K/S)
+  
+  #  OUTPUTS
+  #   obj : [scalar] Value of the objective function
+  
+  # Market volatility
+  vol_mkt   <- option_info[,3] 
+  
+  # Parametric volatility
+  tau <- option_info[,2]
+  m   <- option_info[,4]
+  vol_param <- f_vol_param(m, tau, alpha)
+  
+  # Objective function
+  obj <- sum(abs(vol_mkt - vol_param))
+  if (!is.finite(obj)) {
+    nll <- 1e10
+  }
+  
+  obj
+  
+}
+
+
+f_vol_param <- function(m, tau, alpha) {
+  
+  ### Function that computes the parametric volatility
+  
+  #  INPUTS
+  #   alpha       : [vector] (4 x 1) of the values of the parameters
+  #   m           : [vector] (T x 1) of the moneyness (K/S)
+  #   tau         : [vector] (T x 1) of the time to maturity in years
+  
+  #  OUTPUTS
+  #   vol_param : [vector] (T x 1) of the computed volatility
+  
+  alpha_1 <- alpha[1]
+  alpha_2 <- alpha[2]
+  alpha_3 <- alpha[3]
+  alpha_4 <- alpha[4]
+  
+  # Compute parametric volatility
+  vol_param <- alpha_1 + alpha_2 * (m-1)^2 + alpha_3 * (m-1)^3 + alpha_4 * sqrt(tau)
+  vol_param
+  
+}
+
+
+f_option_info <- function(call_info, put_info, last_price) {
+  
+  ### Function that collects the information about the puts and the calls
+  ### which will be needed in the construction of the volatility surface
+  
+  #  INPUTS
+  #   call_info  : [matrix] (T x 3) of the information about calls. In order, 
+  #                the columns are the strike, the time to maturity in years 
+  #                and the implied volatility (IV)
+  #   put_info   : [matrix] (T x 3) of the information about puts. In order, 
+  #                the columns are the strike, the time to maturity in years 
+  #                and the implied volatility (IV)
+  #   last_price : [scalar] Price for which the information is given
+  
+  #  OUTPUTS
+  #   option_info : [matrix] (T x 4) of the information about both puts
+  #                 and calls. In order, the columns are the strike, the
+  #                 time to maturity in years, the IV and the moneyness (K/S)
+  #  NOTE
+  #   o Since the volatility surface will be calibrated with OTM puts and 
+  #     calls, only those option will be included in the output option_info
+  
+  # Add the moneyness to the information
+  last_price  <- as.numeric(last_price)
+  m_call      <- call_info[,1] / as.numeric(last_price)
+  m_put       <- put_info[,1] / as.numeric(last_price)
+  
+  call_info <- cbind(call_info, m_call)
+  put_info  <- cbind(put_info, m_put)
+  
+  # Get OTM puts (m<1) and calls (m>1) 
+  call_info <- call_info[call_info[,4]>=1,]
+  put_info  <- put_info[put_info[,4]<=1,]
+  
+  # Combine OTM call information and put information
+  option_info <- rbind(call_info, put_info)
+  option_info
+}
